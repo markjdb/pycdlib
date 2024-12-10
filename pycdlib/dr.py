@@ -761,7 +761,8 @@ class DirectoryRecord:
         # see if the child to be added is a duplicate with the entry that
         # bisect_left returned.
         index = bisect.bisect_left(self.children, child)
-        if index != len(self.children) and self.children[index].file_ident == child.file_ident:
+        if index != len(self.children) and self.children[index].file_ident == child.file_ident and \
+           child.rock_ridge is not None and child.rock_ridge.name() == self.children[index].rock_ridge.name():
             if not self.children[index].is_associated_file() and not child.is_associated_file():
                 if not (self.rock_ridge is not None and self.file_identifier() == b'RR_MOVED'):
                     if not allow_duplicate:
@@ -1254,6 +1255,11 @@ class DirectoryRecord:
         if other.file_ident == b'\x01':
             # If self.file_ident was '\x00', it would have been caught above.
             return False
+
+        if self.file_ident == other.file_ident:
+            if self.rock_ridge is not None and other.rock_ridge is not None:
+                return self.rock_ridge.name() < other.rock_ridge.name()
+
         return self.file_ident < other.file_ident
 
     def __ne__(self, other):
@@ -1270,7 +1276,9 @@ class DirectoryRecord:
             self.file_unit_size != other.file_unit_size or \
             self.interleave_gap_size != other.interleave_gap_size or \
             self.seqnum != other.seqnum or self.len_fi != other.len_fi or \
-            self.file_ident != other.file_ident
+            self.file_ident != other.file_ident or \
+            (self.rock_ridge is not None) != (other.rock_ridge is not None) or \
+            (self.rock_ridge is not None and self.rock_ridge.name() != other.rock_ridge.name())
 
     def __eq__(self, other):
         # type: (object) -> bool
